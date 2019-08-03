@@ -22,22 +22,23 @@ def start_service():
     while True:
         # Wait for connection
         print('Waiting for connection')
-        connection, client_address = sock.accept()
-        connection.setblocking(False)
+        conn, client_address = sock.accept()
+        conn.setblocking(False)
 
         # Receive data until the end
         try:
             print('Connection from', client_address)
 
             # Receive the data
-            fulldata = b''
+            data_stream = b''
             while True:
 
                 try:
-                    fulldata += connection.recv(1024)
+                    data_stream += conn.recv(1024)
                 except BlockingIOError:
-                    print('full data: ', fulldata)
-                    print('no more data from', client_address)
+                    data_stream = data_stream.split(u'\u0003\u0000\u0002'.encode('utf-8'))
+                    print('Recieved data: ', data_stream)
+                    print('Data stream complete from ', client_address)
                     break
 
 
@@ -47,7 +48,7 @@ def start_service():
 
         finally:
             # Clean up the connection
-            connection.close()
+            conn.close()
 
         # hashlib.sha3_256(variable.encode('utf-8')).hexdigest()
 
