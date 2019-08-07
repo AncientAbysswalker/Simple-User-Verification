@@ -29,7 +29,7 @@ def start_service():
         sock.sendall(message)
 
         # Look for the response
-        data = sock.recv(256)
+        data = sock.recv(64)
 
         # Is response valid?
         if data == hashlib.sha3_256(rand_num + user).hexdigest().encode('utf-8'):
