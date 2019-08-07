@@ -6,6 +6,7 @@ import socket
 import sys
 import sqlite3
 
+
 def start_service():
     """Start main script loop to run server-side service on port 5000"""
 
@@ -26,7 +27,7 @@ def start_service():
         # Wait for connection
         print('Waiting for connection')
         conn, client_address = sock.accept()
-        conn.settimeout(1.0)
+        conn.settimeout(0.1)
 
         # Receive data in blocks of 1024 bytes, concatenating the bytes after connection timeout
         try:
@@ -53,27 +54,24 @@ def start_service():
                     print('Data stream complete from ', client_address)
                     break
 
-            #print("Properly closed loop")
-
             # Connect to DB and see if user is there
             sql_conn = sqlite3.connect('user_db.db')
             sql_crsr = sql_conn.cursor()
-            print(_user, _passkey)
             sql_crsr.execute("SELECT 1 FROM UserBase WHERE user_name=(?) AND user_pass=(?);", (_user, _passkey))
             valid_user = True if sql_crsr.fetchone() else False
             sql_conn.close()
 
+            # Send response
             if valid_user:
-                conn.sendall(b"valid user")  # data)
+                print("Valid user")
+                conn.sendall(hashlib.sha3_256(_random + _user.encode('utf-8')).hexdigest().encode('utf-8'))
             else:
-                conn.sendall(b"INVALIDDDDDD")  # data)
-            # connection.sendall(b"8")  # data)
+                print("Invalid user")
+                conn.sendall(b"0" * 64)
 
         finally:
             # Clean up the connection
             conn.close()
-
-        # hashlib.sha3_256(variable.encode('utf-8')).hexdigest()
 
 
 if __name__ == '__main__':

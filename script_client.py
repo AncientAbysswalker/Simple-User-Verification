@@ -1,35 +1,46 @@
 import socket
-import sys
+import hashlib
 
-# Create a TCP/IP socket
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-# Connect the socket to the port where the server is listening
-server_address = ('SERVER_IP', 5000)
-print('Connecting to %s port %s' % server_address)
-sock.connect(server_address)
+def start_service():
+    """Start main script to connect to service on port 5000"""
+    # Create a TCP/IP socket
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-try:
-    # Define data for test
-    a = b'user'
-    b = b'pass'
-    r = b'key'
-    s = u'\u0003\u0000\u0002'.encode('utf-8')
+    # Connect the socket to the port where the server is listening
+    server_address = ('SERVER_IP', 5000)
+    print('Connecting to %s port %s' % server_address)
+    try:
+        sock.connect(server_address)
+    except ConnectionRefusedError:
+        print("Service unavailable. Connection refused from %s port %s" % server_address)
+        return
 
-    message = a + s + b + s + r
+    try:
+        # Define data for test
+        user = b'test_user'
+        passkey = b'test_pass'
+        rand_num = b'key'
+        separator = u'\u0003\u0000\u0002'.encode('utf-8')
 
-    # Send all data
-    sock.sendall(message)
+        message = user + separator + passkey + separator + rand_num
 
-    # Look for the response
-    amount_received = 0
-    amount_expected = len(message)
+        # Send all data
+        sock.sendall(message)
 
-    while amount_received < amount_expected:
+        # Look for the response
         data = sock.recv(256)
-        amount_received += len(data)
-        print(sys.stderr, 'received "%s"' % data)
 
-finally:
-    print('Closing socket')
-    sock.close()
+        # Is response valid?
+        if data == hashlib.sha3_256(rand_num + user).hexdigest().encode('utf-8'):
+            print("Valid user")
+        else:
+            print("Invalid user")
+
+    finally:
+        print('Closing socket')
+        sock.close()
+
+
+if __name__ == '__main__':
+    start_service()
